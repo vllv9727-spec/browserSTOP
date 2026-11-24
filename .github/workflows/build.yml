@@ -24,13 +24,18 @@ jobs:
           BT=$(ls "$SDK/build-tools" | sort -V | tail -n 1)
           PL=$(ls "$SDK/platforms" | sort -V | tail -n 1)
           mkdir -p build/obj build/dex
-          "$SDK/build-tools/$BT/aapt2" link -o build/unaligned.apk -I "$SDK/platforms/$PL/android.jar" --manifest android/AndroidManifest.xml --java build
-          javac --release 8 -cp "$SDK/platforms/$PL/android.jar" -d build/obj android/MainActivity.java build/com/stoplien/browser/R.java
+          "$SDK/build-tools/$BT/aapt2" link -o build/unaligned.apk -I "$SDK/platforms/$PL/android.jar" --manifest android/AndroidManifest.xml
+          javac --release 8 -cp "$SDK/platforms/$PL/android.jar" -d build/obj android/MainActivity.java
           "$SDK/build-tools/$BT/d8" --lib "$SDK/platforms/$PL/android.jar" --output build/dex build/obj/com/stoplien/browser/*.class
-          cd build/dex && zip -u ../unaligned.apk classes.dex && cd ../..
+          python3 -c 'import zipfile; z=zipfile.ZipFile("build/unaligned.apk","a"); z.write("build/dex/classes.dex","classes.dex"); z.close()'
+          "$SDK/build-tools/$BT/zipalign" -f 4 build/unaligned.apk build/aligned.apk
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=STOPlien,O=STOP,C=RU"
-          "$SDK/build-tools/$BT/apksigner" sign --ks debug.keystore --ks-pass pass:android --out STOPlien-Browser.apk build/unaligned.apk
+          "$SDK/build-tools/$BT/apksigner" sign --ks debug.keystore --ks-pass pass:android --out STOPlien-Browser.apk build/aligned.apk
       - uses: actions/upload-artifact@v4
+        with:
+          name: STOPlien-Browser-Android
+          path: STOPlien-Browser.apk
+
         with:
           name: STOPlien-Browser-Android
           path: STOPlien-Browser.apk
