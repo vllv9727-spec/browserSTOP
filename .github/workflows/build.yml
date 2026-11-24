@@ -11,7 +11,24 @@ jobs:
           BT=$(ls "$SDK/build-tools" | sort -V | tail -n 1)
           PL=$(ls "$SDK/platforms" | sort -V | tail -n 1)
           mkdir -p build/obj build/dex
-          "$SDK/build-tools/$BT/aapt2" link -o build/unaligned.apk -I "$SDK/platforms/$PL/android.jar" --manifest android/AndroidManifest.xml
+          python3 -c '
+          ns = "http://" + "://android.com"
+          xml = f"""<?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="{ns}" package="com.stoplien.browser" android:versionCode="1" android:versionName="1.0">
+              <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application android:label="STOPlien Browser" android:usesCleartextTraffic="true">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>"""
+          open("build/AndroidManifest.xml", "w").write(xml)
+          '
+          "$SDK/build-tools/$BT/aapt2" link -o build/unaligned.apk -I "$SDK/platforms/$PL/android.jar" --manifest build/AndroidManifest.xml
           javac --release 8 -cp "$SDK/platforms/$PL/android.jar" -d build/obj android/MainActivity.java
           "$SDK/build-tools/$BT/d8" --lib "$SDK/platforms/$PL/android.jar" --output build/dex build/obj/com/stoplien/browser/*.class
           python3 -c 'import zipfile; z=zipfile.ZipFile("build/unaligned.apk","a"); z.write("build/dex/classes.dex","classes.dex"); z.close()'
