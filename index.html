@@ -28,11 +28,18 @@
     <div class="card"><h3>Свои форматы</h3><p>Автоконвертация на лету: программы <b>.exr</b>, текст <b>.tpt</b>, конфиги <b>.nin / .ckg</b>, скрипты <b>.vhs</b>.</p></div>
     <div class="card"><h3>Архивы .strg</h3><p>Встроенное ультра-сжатие презентаций, видео и документов в один клик.</p></div>
   </div>
-  <div class="downloads">
-    <a class="btn win" href="https://github.com" download>Скачать браузер для Windows (.exe)</a>
-    <a class="btn and" href="https://github.com" download>Для Android! (.apk)</a>
-    <a class="btn alt" href="https://github.com" download>Скачать для STOPlien/Linux (.exr)</a>
-    <a class="btn" href="https://github.com" download>Скачать STOPlien OS 1.0 (.iso)</a>
-  </div>
+  <div class="downloads" id="dl"></div>
+  <script>
+    const base = "https://github.com" + "vllv9727-spec/browserSTOP/releases/download/v1.0/";
+    const links = [
+      { cls: "btn win", file: "STOPlien-Browser.exe", text: "Скачать браузер для Windows (.exe)" },
+      { cls: "btn and", file: "STOPlien-Browser.apk", text: "Для Android! (.apk)" },
+      { cls: "btn alt", file: "STOPlien-Browser.exr", text: "Скачать для STOPlien/Linux (.exr)" },
+      { cls: "btn",     file: "STOPlien-OS-Release-1.0.iso", text: "Скачать STOPlien OS 1.0 (.iso)" }
+    ];
+    document.getElementById("dl").innerHTML = links.map(l =>
+      `<a class="${l.cls}" href="${base}${l.file}">${l.text}</a>`
+    ).join("");
+  </script>
 </body>
 </html>
