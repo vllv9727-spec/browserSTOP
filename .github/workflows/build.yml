@@ -12,12 +12,22 @@ jobs:
           PL=$(ls "$SDK/platforms" | sort -V | tail -n 1)
           mkdir -p build/obj build/dex build/res/drawable
           python3 -c '
-          from PIL import Image, ImageDraw
-          img = Image.new("RGBA", (192, 192), (18, 18, 22, 255))
-          d = ImageDraw.Draw(img)
-          d.rounded_rectangle([16, 16, 176, 176], radius=36, fill=(220, 20, 20, 255), outline=(255, 255, 255, 255), width=8)
-          d.text((54, 84), "STOP", fill=(255, 255, 255, 255))
-          img.save("build/res/drawable/icon.png")
+          import zlib, struct
+          w, h = 192, 192
+          rows = []
+          for y in range(h):
+              row = bytearray(b"\x00")
+              for x in range(w):
+                  border = (16 <= x < 176 and 16 <= y < 176) and not (24 <= x < 168 and 24 <= y < 168)
+                  inside = (24 <= x < 168 and 24 <= y < 168)
+                  if border: row.extend((255, 255, 255, 255))
+                  elif inside: row.extend((220, 20, 20, 255))
+                  else: row.extend((18, 18, 22, 255))
+              rows.append(bytes(row))
+          def chunk(t, d):
+              return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)
+          png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(b"".join(rows))) + chunk(b"IEND", b"")
+          open("build/res/drawable/icon.png", "wb").write(png)
           '
           "$SDK/build-tools/$BT/aapt2" compile --dir build/res -o build/res.zip
           python3 -c 'import base64; open("build/AndroidManifest.xml","wb").write(base64.b64decode("PG1hbmlmZXN0IHhtbG5zOmFuZHJvaWQ9Imh0dHA6Ly9zY2hlbWFzLmFuZHJvaWQuY29tL2Fway9yZXMvYW5kcm9pZCIgcGFja2FnZT0iY29tLnN0b3BsaWVuLmJyb3dzZXIiIGFuZHJvaWQ6dmVyc2lvbkNvZGU9IjIiIGFuZHJvaWQ6dmVyc2lvbk5hbWU9IjEuMS1iZXRhIj48dXNlcy1zZGsgYW5kcm9pZDptaW5TZGtWZXJzaW9uPSIyMSIgYW5kcm9pZDp0YXJnZXRTZGtWZXJzaW9uPSIzMyIvPjx1c2VzLXBlcm1pc3Npb24gYW5kcm9pZDpuYW1lPSJhbmRyb2lkLnBlcm1pc3Npb24uSU5URVJORVQiLz48YXBwbGljYXRpb24gYW5kcm9pZDpsYWJlbD0iU1RPUGxpZW4gQnJvd3NlciIgYW5kcm9pZDppY29uPSJAZHJhd2FibGUvaWNvbiIgYW5kcm9pZDp1c2VzQ2xlYXJ0ZXh0VHJhZmZpYz0idHJ1ZSI+PGFjdGl2aXR5IGFuZHJvaWQ6bmFtZT0iLk1haW5BY3Rpdml0eSIgYW5kcm9pZDpleHBvcnRlZD0idHJ1ZSI+PGludGVudC1maWx0ZXI+PGFjdGlvbiBhbmRyb2lkOm5hbWU9ImFuZHJvaWQuaW50ZW50LmFjdGlvbi5NQUlOIi8+PGNhdGVnb3J5IGFuZHJvaWQ6bmFtZT0iYW5kcm9pZC5pbnRlbnQuY2F0ZWdvcnkuTEFVTkNIRVIiLz48L2ludGVudC1maWx0ZXI+PC9hY3Rpdml0eT48L2FwcGxpY2F0aW9uPjwvbWFuaWZlc3Q+"))'
