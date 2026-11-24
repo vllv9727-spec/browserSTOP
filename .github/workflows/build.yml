@@ -10,9 +10,18 @@ jobs:
           SDK="/usr/local/lib/android/sdk"
           BT=$(ls "$SDK/build-tools" | sort -V | tail -n 1)
           PL=$(ls "$SDK/platforms" | sort -V | tail -n 1)
-          mkdir -p build/obj build/dex
-                   python3 -c 'import base64; open("build/AndroidManifest.xml","wb").write(base64.b64decode("PG1hbmlmZXN0IHhtbG5zOmFuZHJvaWQ9Imh0dHA6Ly9zY2hlbWFzLmFuZHJvaWQuY29tL2Fway9yZXMvYW5kcm9pZCIgcGFja2FnZT0iY29tLnN0b3BsaWVuLmJyb3dzZXIiIGFuZHJvaWQ6dmVyc2lvbkNvZGU9IjEiIGFuZHJvaWQ6dmVyc2lvbk5hbWU9IjEuMCI+PHVzZXMtc2RrIGFuZHJvaWQ6bWluU2RrVmVyc2lvbj0iMjEiIGFuZHJvaWQ6dGFyZ2V0U2RrVmVyc2lvbj0iMzMiLz48dXNlcy1wZXJtaXNzaW9uIGFuZHJvaWQ6bmFtZT0iYW5kcm9pZC5wZXJtaXNzaW9uLklOVEVSTkVUIi8+PGFwcGxpY2F0aW9uIGFuZHJvaWQ6bGFiZWw9IlNUT1BsaWVuIEJyb3dzZXIiIGFuZHJvaWQ6dXNlc0NsZWFydGV4dFRyYWZmaWM9InRydWUiPjxhY3Rpdml0eSBhbmRyb2lkOm5hbWU9Ii5NYWluQWN0aXZpdHkiIGFuZHJvaWQ6ZXhwb3J0ZWQ9InRydWUiPjxpbnRlbnQtZmlsdGVyPjxhY3Rpb24gYW5kcm9pZDpuYW1lPSJhbmRyb2lkLmludGVudC5hY3Rpb24uTUFJTiIvPjxjYXRlZ29yeSBhbmRyb2lkOm5hbWU9ImFuZHJvaWQuaW50ZW50LmNhdGVnb3J5LkxBVU5DSEVSIi8+PC9pbnRlbnQtZmlsdGVyPjwvYWN0aXZpdHk+PC9hcHBsaWNhdGlvbj48L21hbmlmZXN0Pg=="))'
-          "$SDK/build-tools/$BT/aapt2" link -o build/unaligned.apk -I "$SDK/platforms/$PL/android.jar" --manifest build/AndroidManifest.xml
+          mkdir -p build/obj build/dex build/res/drawable
+          python3 -c '
+          from PIL import Image, ImageDraw
+          img = Image.new("RGBA", (192, 192), (18, 18, 22, 255))
+          d = ImageDraw.Draw(img)
+          d.rounded_rectangle([16, 16, 176, 176], radius=36, fill=(220, 20, 20, 255), outline=(255, 255, 255, 255), width=8)
+          d.text((54, 84), "STOP", fill=(255, 255, 255, 255))
+          img.save("build/res/drawable/icon.png")
+          '
+          "$SDK/build-tools/$BT/aapt2" compile --dir build/res -o build/res.zip
+          python3 -c 'import base64; open("build/AndroidManifest.xml","wb").write(base64.b64decode("PG1hbmlmZXN0IHhtbG5zOmFuZHJvaWQ9Imh0dHA6Ly9zY2hlbWFzLmFuZHJvaWQuY29tL2Fway9yZXMvYW5kcm9pZCIgcGFja2FnZT0iY29tLnN0b3BsaWVuLmJyb3dzZXIiIGFuZHJvaWQ6dmVyc2lvbkNvZGU9IjIiIGFuZHJvaWQ6dmVyc2lvbk5hbWU9IjEuMS1iZXRhIj48dXNlcy1zZGsgYW5kcm9pZDptaW5TZGtWZXJzaW9uPSIyMSIgYW5kcm9pZDp0YXJnZXRTZGtWZXJzaW9uPSIzMyIvPjx1c2VzLXBlcm1pc3Npb24gYW5kcm9pZDpuYW1lPSJhbmRyb2lkLnBlcm1pc3Npb24uSU5URVJORVQiLz48YXBwbGljYXRpb24gYW5kcm9pZDpsYWJlbD0iU1RPUGxpZW4gQnJvd3NlciIgYW5kcm9pZDppY29uPSJAZHJhd2FibGUvaWNvbiIgYW5kcm9pZDp1c2VzQ2xlYXJ0ZXh0VHJhZmZpYz0idHJ1ZSI+PGFjdGl2aXR5IGFuZHJvaWQ6bmFtZT0iLk1haW5BY3Rpdml0eSIgYW5kcm9pZDpleHBvcnRlZD0idHJ1ZSI+PGludGVudC1maWx0ZXI+PGFjdGlvbiBhbmRyb2lkOm5hbWU9ImFuZHJvaWQuaW50ZW50LmFjdGlvbi5NQUlOIi8+PGNhdGVnb3J5IGFuZHJvaWQ6bmFtZT0iYW5kcm9pZC5pbnRlbnQuY2F0ZWdvcnkuTEFVTkNIRVIiLz48L2ludGVudC1maWx0ZXI+PC9hY3Rpdml0eT48L2FwcGxpY2F0aW9uPjwvbWFuaWZlc3Q+"))'
+          "$SDK/build-tools/$BT/aapt2" link -o build/unaligned.apk -I "$SDK/platforms/$PL/android.jar" --manifest build/AndroidManifest.xml build/res.zip
           javac --release 8 -cp "$SDK/platforms/$PL/android.jar" -d build/obj android/MainActivity.java
           "$SDK/build-tools/$BT/d8" --lib "$SDK/platforms/$PL/android.jar" --output build/dex build/obj/com/stoplien/browser/*.class
           python3 -c 'import zipfile; z=zipfile.ZipFile("build/unaligned.apk","a"); z.write("build/dex/classes.dex","classes.dex"); z.close()'
