@@ -14,3 +14,23 @@ jobs:
         with:
           name: STOPlien-Browser-Windows
           path: dist/STOPlien-Browser.exe
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build APK
+        run: |
+          SDK="$ANDROID_HOME"
+          BT=$(ls "$SDK/build-tools" | sort -V | tail -n 1)
+          PL=$(ls "$SDK/platforms" | sort -V | tail -n 1)
+          mkdir -p build/obj build/dex
+          "$SDK/build-tools/$BT/aapt" package -f -m -J build -M android/AndroidManifest.xml -I "$SDK/platforms/$PL/android.jar"
+          javac -source 1.8 -target 1.8 -cp "$SDK/platforms/$PL/android.jar" -d build/obj android/MainActivity.java build/com/stoplien/browser/R.java
+          "$SDK/build-tools/$BT/d8" --output build/dex build/obj/com/stoplien/browser/*.class
+          "$SDK/build-tools/$BT/aapt" package -f -M android/AndroidManifest.xml -I "$SDK/platforms/$PL/android.jar" -F build/unaligned.apk build/dex
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=STOPlien,O=STOP,C=RU"
+          "$SDK/build-tools/$BT/apksigner" sign --ks debug.keystore --ks-pass pass:android --out STOPlien-Browser.apk build/unaligned.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: STOPlien-Browser-Android
+          path: STOPlien-Browser.apk
