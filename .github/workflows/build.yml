@@ -1,19 +1,6 @@
-name: Build STOPlien Browser
-on: [workflow_dispatch, push]
+name: Build STOPlien
+on: [workflow_dispatch]
 jobs:
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install PyQt5 PyQtWebEngine pyinstaller
-      - run: pyinstaller --onefile --windowed --name STOPlien-Browser stoplien-browser.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: STOPlien-Browser-Windows
-          path: dist/STOPlien-Browser.exe
   build-android:
     runs-on: ubuntu-latest
     steps:
@@ -29,13 +16,9 @@ jobs:
           "$SDK/build-tools/$BT/d8" --lib "$SDK/platforms/$PL/android.jar" --output build/dex build/obj/com/stoplien/browser/*.class
           python3 -c 'import zipfile; z=zipfile.ZipFile("build/unaligned.apk","a"); z.write("build/dex/classes.dex","classes.dex"); z.close()'
           "$SDK/build-tools/$BT/zipalign" -f 4 build/unaligned.apk build/aligned.apk
-          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=STOPlien,O=STOP,C=RU"
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=STOP,O=STOP,C=RU"
           "$SDK/build-tools/$BT/apksigner" sign --ks debug.keystore --ks-pass pass:android --out STOPlien-Browser.apk build/aligned.apk
       - uses: actions/upload-artifact@v4
-        with:
-          name: STOPlien-Browser-Android
-          path: STOPlien-Browser.apk
-
         with:
           name: STOPlien-Browser-Android
           path: STOPlien-Browser.apk
